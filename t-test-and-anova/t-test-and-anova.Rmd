@@ -1,0 +1,105 @@
+---
+title: "T-Test and ANOVA"
+author: "Alex Kong"
+date: "2/22/2021"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Page 11
+
+ * Generate a random sample of 10 numbers from a normal distribution with mean 0
+and standard deviation 2. Then use t.test to test the null hypothesis that the
+mean is 0.
+
+$$
+H_0: \mu == 0 \\
+H_1: \mu \neq 0
+$$
+```{r}
+s1 <- rnorm(10, mean=0, sd=2)
+# Note that t test can only be used under the normal distribution assumption!
+res <- t.test(s1)
+res$p.value
+res$conf.int
+t.test(rnorm(3000, mean=0, sd=2))
+```
+
+ * Generate a random sample of 10 numbers from a normal distribution with mean 1.5
+and standard deviation 2. Then use t.test to test the null hypothesis that the
+mean is 0.
+
+```{r}
+s1 <- rnorm(10, mean=1.5, sd=2)
+# Note that t test can only be used under the normal distribution assumption!
+res <- t.test(s1)
+res$p.value
+res$conf.int
+res$estimate
+```
+
+### Page 13
+![Scancopy from a book as an example dataset](example.png)
+```{r}
+csv <- read.csv(file = 'example.csv')
+csv <- as_tibble(csv)
+csv
+a <- csv %>% filter(Method == 'A')
+b <- csv %>% filter(Method == 'B')
+a$Yield
+t.test(a$Yield, b$Yield)
+```
+
+### Page 16
+```{r}
+prop.test(c(13883, 11930), c(13883+79658, 11930 + 110348))
+#X-squared is just chi-square
+sqrt(1301)
+```
+
+### Page 17
+Note that ANOVA is a way to estimate means.
+```{r}
+csv %>% ggplot(aes(x = Method, y = Yield)) + geom_boxplot()
+res <- aov(Yield ~ Method, data=csv)
+res
+summary(res)
+summary.lm(res)
+res$coefficients
+# intercept is the mean of A, A plus MethodB is the mean of B
+```
+
+### Another ANOVA practice
+```{r}
+dA <- readr::read_csv('exchangeA.csv')
+dB <- readr::read_csv('exchangeB.csv')
+
+d <- bind_rows(dA %>% add_column(Exchange="A"), dB %>% add_column(Exchange="B"))
+d
+d_long <- d %>% pivot_longer(Mon:Fri, names_to="Weekday", values_to="Return")
+d_long
+
+res <- aov(Return ~ Weekday + Exchange, data=d_long)
+summary(res)
+summary.lm(res)
+new <- tibble(Exchange="A", Weekday="Wed")
+predict(res, new, interval="prediction", level=0.99, se.fit = TRUE)
+```
+```{r}
+d_long
+res2 <- aov(Return ~ Weekday, data=d_long)
+summary(res2)
+summary.lm(res2)
+predict(res2, new, interval="prediction", level=0.99, se.fit = TRUE)
+```
+```{r}
+d_long %>% group_by(Exchange) %>% ggplot(aes(x=Exchange, y=Return)) +
+geom_boxplot()
+
+d_long %>% group_by(Weekday) %>% ggplot(aes(x=Weekday, y=Return)) +
+geom_boxplot()
+```
+```
