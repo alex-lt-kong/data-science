@@ -19,7 +19,7 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
 import importlib
-lec45 = importlib.import_module('200922_ch2_linear-regression')
+lec45 = importlib.import_module('linear-regression-and-assumptions')
 #
 # Refer to page 103 of lec4-5_ch2-linear-regression-models.pdf
 #

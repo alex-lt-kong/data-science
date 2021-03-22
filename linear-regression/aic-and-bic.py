@@ -21,7 +21,7 @@ import statsmodels.api as sm
 import statsmodels.formula.api as smf
 
 import importlib
-ch2 = importlib.import_module('200922_ch2_linear-regression-and-assumptions')
+ch2 = importlib.import_module('linear-regression-and-assumptions')
 
 def model_evaluator(dataset: np.ndarray,
                     column_names_of_explanatory_aka_independent_variables: List[str],
