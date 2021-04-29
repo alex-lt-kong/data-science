@@ -2,14 +2,15 @@
 title: "T-Test and ANOVA"
 author: "Alex Kong"
 date: "2/22/2021"
-output: rmarkdown::github_document
+output: html_document
+#output: rmarkdown::github_document
 ---
 
 ```{r setup, include=FALSE}
 library(tidyverse)
 knitr::opts_chunk$set(echo = TRUE)
 ```
-### Page 11
+# Page 11 - T-Test
 
  * Generate a random sample of 10 numbers from a normal distribution with mean 0
 and standard deviation 2. Then use t.test to test the null hypothesis that the
@@ -41,7 +42,8 @@ res$conf.int
 res$estimate
 ```
 
-### Page 13
+# Page 13 - T-Test
+
 ![Scancopy from a book as an example dataset](example.png)
 ```{r}
 csv <- read.csv(file = 'example.csv')
@@ -53,15 +55,10 @@ a$Yield
 t.test(a$Yield, b$Yield)
 ```
 
-### Page 16
-```{r}
-prop.test(c(13883, 11930), c(13883+79658, 11930 + 110348))
-#X-squared is just chi-square
-sqrt(1301)
-```
+# Page 17 - ANOVA
 
-### Page 17
 Note that ANOVA is a way to estimate means.
+
 ```{r}
 csv %>% ggplot(aes(x = Method, y = Yield)) + geom_boxplot()
 res <- aov(Yield ~ Method, data=csv)
@@ -72,7 +69,8 @@ res$coefficients
 # intercept is the mean of A, A plus MethodB is the mean of B
 ```
 
-### Another ANOVA practice
+# Another ANOVA practice - day-of-the-week effect
+
 ```{r}
 dA <- readr::read_csv('exchangeA.csv')
 dB <- readr::read_csv('exchangeB.csv')
@@ -102,4 +100,74 @@ geom_boxplot()
 d_long %>% group_by(Weekday) %>% ggplot(aes(x=Weekday, y=Return)) +
 geom_boxplot()
 ```
+
+# ANOVA vs Linear Regression - From StatQuest
+
+It appears that ANOVA is just linear regression with dummy encoding...
+The reference link: https://www.youtube.com/watch?v=Hrr2anyK_5s
+
+```{r}
+intercept <- rep(1, 8)
+mutant <- c(0, 0, 0, 0, 1, 1, 1, 1)
+weight <- c(2.4, 3.5, 4.4, 4.9, 1.7, 2.8, 3.2, 3.9)
+size <- c(1.9, 3, 2.9, 3.7, 2.8, 3.3, 3.9, 4.8)
+df <- data.frame(cbind(size, mutant, weight))
+df
+
+lm_fit <- lm(formula = size ~ mutant + weight, data = df)
+summary(lm_fit)
+
+mutant <- c(1, 1, 1, 1, 2, 2, 2, 2)
+weight <- c(2.4, 3.5, 4.4, 4.9, 1.7, 2.8, 3.2, 3.9)
+size <- c(1.9, 3, 2.9, 3.7, 2.8, 3.3, 3.9, 4.8)
+df <- data.frame(cbind(size, mutant, weight))
+df
+
+lm_fit <- aov(formula = size ~ mutant + weight, data = df)
+summary(lm_fit)
+summary.lm(lm_fit)
 ```
+
+# ANOVA vs Linear Regression - Redo the day-of-the-week effect
+
+Read and preprocess data...
+
+```{r message=FALSE}
+
+dA <- readr::read_csv('exchangeA.csv')
+dB <- readr::read_csv('exchangeB.csv')
+
+d <- bind_rows(dA %>% add_column(Exchange="A"), dB %>% add_column(Exchange="B"))
+d_long <- d %>% pivot_longer(Mon:Fri, names_to="Weekday", values_to="Return")
+tail(d_long)
+
+```
+
+First, do ANOVA the old way.
+
+```{r message=FALSE}
+res <- aov(Return ~ Weekday + Exchange, data=d_long)
+summary(res)
+summary.lm(res)
+```
+
+Let's try construct a design matrix ourselves!
+
+```{r message=FALSE}
+library(fastDummies)
+df <- cbind(d_long, dummy_columns(d_long$Weekday))
+df <- cbind(df, dummy_columns(d_long$Exchange))
+# The following few lines are just removing the unnecessary columns from the
+# design matrix
+df <- df[, -1]
+df <- df[, -1]
+df <- df[, -8]
+df <- df[, -2]
+df <- df[, -7]
+df <- df[, -2]
+tail(df)
+lm_fit <- lm(formula = Return ~ ., data = df)
+summary(lm_fit)
+```
+
+As you can see, the results from two chunks are exactly the same!
